@@ -1,0 +1,92 @@
+REAL DEPLOYMENT GUIDE  -  CCTV-Based University Security System
+================================================================
+
+1. HOW IT FITS TOGETHER
+-----------------------
+   [IP camera] --cable--+
+   [IP camera] --cable--+--> [PoE switch] --cable--> [SERVER PC in the security office]
+   [IP camera] --cable--+                               |  XAMPP (Apache + PHP)  = the website
+   (gate, library, hostels, ...)                        |  recorder.php + ffmpeg = saves video 24/7
+                                                        |  big hard disk         = stores the footage
+                                                        v
+                                   Security staff open  http://SERVER-IP/cctv/  in a browser
+
+   Live view : browser -> stream.php -> ffmpeg -> camera   (ffmpeg turns the camera's RTSP video into
+               a picture stream the browser can show)
+   Recording : recorder.php starts ffmpeg per camera; video is saved in cctv\recordings\CAMxx\
+               (one file every 10 minutes) and listed on the Recordings page, where staff click Play.
+   Health    : the recorder checks every camera every 10 seconds. If a camera stops answering, the
+               system marks it Offline and raises an alert. System health page (admin) shows it all.
+
+2. WHAT TO BUY / ARRANGE
+------------------------
+   - IP cameras with PoE and RTSP support (one per location). Set them to H.264 video.
+   - PoE switch with enough ports, network cable (Cat6) from every camera to the switch.
+   - Server PC that stays on 24/7 (any modern desktop is fine for a pilot of 4-8 cameras),
+     plus a UPS (battery backup) if power cuts are common.
+   - Hard disk(s) for footage (see section 6).
+   - Written permission from university management, and CCTV warning signs.
+
+3. SET UP THE SERVER (one time)
+-------------------------------
+   a) Install XAMPP, copy the cctv folder to C:\xampp\htdocs\ and run install.php (see README.txt).
+      For real use choose the MySQL option and give MySQL a password.
+   b) Install ffmpeg:  download a Windows build (search "ffmpeg windows build", e.g. gyan.dev),
+      unzip it to C:\ffmpeg  so that  C:\ffmpeg\bin\ffmpeg.exe  exists.
+      Open  C:\xampp\htdocs\cctv\db.php  in Notepad and change the line
+          defined('FFMPEG_PATH') || define('FFMPEG_PATH', 'ffmpeg');
+      to
+          defined('FFMPEG_PATH') || define('FFMPEG_PATH', 'C:\\ffmpeg\\bin\\ffmpeg.exe');
+      (If PHP's "proc_open" is disabled in php.ini, remove it from disable_functions.)
+   c) Give the server PC a fixed IP address (ask your network technician).
+
+4. CONNECT A CAMERA
+-------------------
+   a) Plug the camera into the PoE switch. Give it a fixed IP, e.g. 192.168.1.101, and change its
+      default password. Do this with the camera maker's setup tool / web page.
+   b) Find its RTSP address in the camera manual. It looks like
+          rtsp://USER:PASSWORD@192.168.1.101:554/PATH
+      The PATH depends on the brand (check the manual). Test it first in VLC:
+      Media > Open Network Stream > paste the address. If VLC shows video, the system will too.
+   c) In the system: log in as admin > Cameras > Edit the camera > paste the address in
+      "Camera address for live view + 24/7 recording" > Save.
+   d) Double-click  start-recorder.bat  and leave its window open. Within 10 seconds the camera
+      shows as recording on the System health page, and Live monitoring shows its picture.
+
+   TRY IT WITH A PHONE: any Android phone running the free "IP Webcam" app is a real IP camera.
+   Use its address  http://PHONE-IP:8080/video  as the "Camera address" (see README.txt).
+   The recorder converts it to H.264 files automatically, so the footage plays in the browser.
+
+5. KEEP IT RUNNING
+------------------
+   - Make the recorder start with Windows:  press Win+R, type  shell:startup  and put a shortcut to
+     start-recorder.bat in that folder. (Or use Task Scheduler: "At log on" > run start-recorder.bat.)
+   - Start Apache and MySQL automatically: in the XAMPP Control Panel tick the "Svc" boxes.
+   - Old footage is deleted automatically after the days set in Settings (default 30).
+   - Back up the database (phpMyAdmin > Export, or copy cctv\data\cctv.sqlite) weekly.
+
+6. DISK SPACE
+-------------
+   One camera at 4 Mbps records about 43 GB per day, so 30 days is about 1.3 TB per camera.
+   At 2 Mbps (lower resolution sub-stream) it is about half. Multiply by the number of cameras and
+   buy at least that much disk. The System health page shows free space.
+   Audio is deliberately NOT recorded (recording sound can break privacy law).
+
+7. SECURITY CHECKLIST (do all of these before going live)
+---------------------------------------------------------
+   [ ] Changed the admin and security passwords (Settings page) and every camera's password.
+   [ ] Cameras and server are on the campus network only. Never open camera ports to the internet.
+   [ ] Server PC is in a locked room; only authorised staff have the admin account.
+   [ ] MySQL root has a password, phpMyAdmin is not reachable from other computers.
+   [ ] Use HTTPS if the site is opened from other computers (XAMPP has a built-in test certificate).
+   [ ] CCTV signs are displayed; a written policy says who may view and for how long footage is kept
+       (Kenya Data Protection Act).
+
+8. KNOWN LIMITS (be honest about these in your report)
+------------------------------------------------------
+   - One server: if it is switched off, nothing records. Use a UPS and start-on-boot.
+   - Each person watching a camera live uses one ffmpeg process (fine for a few viewers).
+   - The recorder copies the camera's video without re-encoding. H.265 cameras record fine, but
+     browsers may not play them back; set cameras to H.264.
+   - The live view and recorder were tested with a phone-style http camera stream and with camera/
+     network failure simulation. Your real camera brand's RTSP address must be tested on site (step 4b).

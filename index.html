@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CCTV-Based University Security System</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#0E1318;--panel:#171E25;--panel2:#1D262F;--line:#2B3038;--accent:#5FA648;--accent-dim:#274420;--text:#E7ECEE;--muted:#8A97A3;--alert:#D9614A;--alert-bg:#2A1712;--warn:#D9A441;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Inter,Arial,sans-serif;font-size:14px}
+.hidden{display:none!important}
+.mono{font-family:ui-monospace,Consolas,monospace}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;width:100%;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:#0F151A;color:var(--text);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+.field{margin-bottom:14px}
+.btn{padding:9px 14px;border-radius:6px;border:1px solid var(--accent-dim);background:var(--accent);color:#0E1318;font-weight:600}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
+.btn.danger{background:transparent;color:var(--alert);border-color:var(--alert)}
+.btn.small{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* login */
+#login{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;
+ background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:36px 36px;background-position:center}
+.lwrap{width:100%;max-width:420px}
+.lstatus{display:flex;justify-content:space-between;margin-bottom:14px;padding:0 4px;font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;box-shadow:0 0 6px var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:30px 28px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.card h1{margin:0 0 4px;font-size:18px}
+.sub{margin:0 0 24px;font-size:13px;color:var(--muted)}
+.pw{position:relative}.pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--muted);font-size:11px}
+.err{margin-top:14px;padding:10px 12px;border-radius:6px;background:var(--alert-bg);border:1px solid var(--alert);color:#F0B4A6;font-size:13px}
+.hint{margin-top:18px;font-size:11px;color:var(--muted);text-align:center;line-height:1.7}.hint code{color:var(--text)}
+
+/* app */
+#app{display:flex;min-height:100%}
+aside{width:230px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
+.brand{padding:18px 18px 14px;font-weight:700;font-size:15px;border-bottom:1px solid var(--line)}
+.brand small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:2px}
+nav{padding:10px;flex:1}
+nav button{display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:2px;border:0;border-radius:6px;background:none;color:var(--muted)}
+nav button:hover{background:var(--panel2);color:var(--text)}
+nav button.on{background:var(--accent-dim);color:#fff}
+.who{padding:14px 18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.who b{color:var(--text);display:block;font-size:13px}
+main{flex:1;min-width:0;padding:22px 26px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}
+.top h2{margin:0;font-size:20px}.top p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.clock{color:var(--muted);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.stat .n{font-size:26px;font-weight:700}.stat .l{color:var(--muted);font-size:12px}
+section{margin-bottom:26px}
+section>h3,.head-row h3{margin:0 0 10px;font-size:15px}
+.head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.list{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+th{color:var(--muted);font-weight:500;font-size:12px;background:var(--panel2)}
+tr:last-child td{border-bottom:0}
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid var(--line)}
+.badge.online,.badge.resolved,.badge.active,.badge.low{color:#8FD27A;border-color:var(--accent-dim)}
+.badge.offline,.badge.high,.badge.disabled{color:#F0B4A6;border-color:var(--alert)}
+.badge.maintenance,.badge.investigating,.badge.medium{color:var(--warn);border-color:#5a4513}
+.badge.open{color:#F0B4A6;border-color:var(--alert)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+.cam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.cam{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer}
+.cam:hover{border-color:var(--accent)}
+.cam .thumb{height:140px;background:#0a0f12;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;position:relative}
+.cam .thumb.live{color:var(--accent)}
+.cam .thumb .rec{position:absolute;top:8px;right:10px;color:var(--alert);font-size:11px}
+.cam .info{padding:10px 12px;font-size:13px}.cam .info small{color:var(--muted);display:block;margin-top:2px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:18px;z-index:10}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;width:100%;max-width:560px;max-height:92vh;overflow:auto}
+.modal.wide{max-width:720px}
+.modal h3{margin:0 0 14px}
+.feed{background:#0a0f12;border-radius:6px;aspect-ratio:16/9;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative}
+.feed video,.feed canvas{width:100%;height:100%;object-fit:cover}
+.feed .ov{position:absolute;left:10px;top:8px;color:var(--accent);font-size:12px;text-shadow:0 0 4px #000}
+.feed .recdot{position:absolute;right:12px;top:8px;color:var(--alert);font-size:12px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 12px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);padding:10px 18px;border-radius:6px;z-index:20;font-size:13px}
+.toast.bad{border-color:var(--alert);color:#F0B4A6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media print{aside,.top .clock,.actions,.toast{display:none!important}body{background:#fff;color:#000}main{padding:0}.stat,.list{border-color:#999;background:#fff}}
+@media(max-width:760px){aside{width:100%;position:static}#app{flex-direction:column}nav{display:flex;flex-wrap:wrap;gap:4px}nav button{width:auto}.row2{grid-template-columns:1fr}main{padding:16px}}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,#2a3a33);border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer;margin-right:14px;color:var(--muted);user-select:none}
+.pill.on{color:#fff;border-color:var(--alert);background:rgba(217,97,74,.18)}
+.pill.on i{background:var(--alert);animation:bl 1s infinite}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+@keyframes bl{50%{opacity:.25}}
+.rthumb{width:96px;height:54px;object-fit:cover;border-radius:4px;background:var(--panel2);display:block}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="lwrap">
+    <div class="lstatus mono"><span><span class="dot"></span>SECURE CONNECTION</span><span id="lclock">--:--:--</span></div>
+    <div class="card">
+      <h1>CCTV-Based Security System</h1>
+      <p class="sub">Sign in to access the surveillance console.</p>
+      <form id="lform" autocomplete="off">
+        <div class="field"><label for="lu">Username</label><input id="lu" autofocus></div>
+        <div class="field"><label for="lp">Password</label>
+          <div class="pw"><input id="lp" type="password"><button type="button" id="lt">SHOW</button></div></div>
+        <button class="btn" style="width:100%;padding:12px" type="submit">Log in</button>
+        <div class="err hidden" id="lerr" role="alert"></div>
+      </form>
+      <p class="hint">Administrator: <code>admin / admin123</code><br>Security personnel: <code>security / security123</code></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand">CCTV Security<small id="orgName">Zetech University</small></div>
+    <nav id="nav"></nav>
+    <div class="who"><b id="whoName"></b><span id="whoRole"></span><br><button class="btn ghost small" id="logout" style="margin-top:10px">Log out</button></div>
+  </aside>
+  <main>
+    <div class="top"><div><h2 id="title"></h2><p id="subtitle"></p></div><div class="clock mono"><span class="pill" id="recpill" title="Click to turn automatic recording on or off"><i></i><span id="recTxt">Auto-record</span></span><span class="dot"></span><span id="clock"></span></div></div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<script>
+(function () {
+'use strict';
+/* =====================================================================
+   DATA  - stored in this browser (localStorage) so changes are kept.
+   To reset everything: log in as admin > Settings > Reset demo data.
+   ===================================================================== */
+var KEY = 'cctv_db_v1';
+function defSettings() { return { org_name: 'Zetech University', retention_days: 30, segment_seconds: 60, cap_mb: 500, auto_record: true }; }
+function seed() {
+  return {
+    users: [
+      { id: 1, name: 'System Administrator', username: 'admin',    password: 'admin123',    role: 'admin',    status: 'active' },
+      { id: 2, name: 'Security Personnel',   username: 'security', password: 'security123', role: 'operator', status: 'active' }
+    ],
+    zones: ['Main Gate', 'Library', 'Hostels', 'Parking', 'Admin Block', 'Labs'],
+    cameras: [
+      { id: 1, code: 'CAM 01', zone: 'Main Gate',   location: 'Main gate entrance',  source: 'webcam', status: 'online' },
+      { id: 2, code: 'CAM 02', zone: 'Library',     location: 'Library reading hall', source: '',       status: 'offline' },
+      { id: 3, code: 'CAM 03', zone: 'Hostels',     location: 'Hostel block A corridor', source: '',    status: 'offline' },
+      { id: 4, code: 'CAM 04', zone: 'Parking',     location: 'Staff parking lot',    source: '',       status: 'offline' },
+      { id: 5, code: 'CAM 05', zone: 'Admin Block', location: 'Admin block lobby',    source: '',       status: 'offline' },
+      { id: 6, code: 'CAM 06', zone: 'Labs',        location: 'Computer lab 2',       source: '',       status: 'maintenance' }
+    ],
+    incidents: [
+      { id: 1, title: 'Unauthorised entry at hostel gate', camera: 'CAM 03', severity: 'high',   status: 'investigating', desc: 'Person climbed over the fence after 10pm.', by: 'security', at: '2026-10-14 22:10' },
+      { id: 2, title: 'Suspicious vehicle in parking',     camera: 'CAM 04', severity: 'medium', status: 'open',          desc: 'Unknown car parked for hours.',            by: 'security', at: '2026-10-15 14:30' },
+      { id: 3, title: 'Laptop theft reported in library',  camera: 'CAM 02', severity: 'high',   status: 'resolved',      desc: 'Footage reviewed; suspect identified.',     by: 'admin',    at: '2026-10-12 11:05' }
+    ],
+    recordings: [],
+    alerts: [
+      { id: 1, camera: 'CAM 03', msg: 'Motion detected after hours', at: '2026-10-17 23:12', ack: false },
+      { id: 2, camera: 'CAM 04', msg: 'Camera went offline',         at: '2026-10-17 18:40', ack: false }
+    ],
+    settings: defSettings(),
+    log: [], v: 2, next: { incidents: 4, recordings: 1, alerts: 3, cameras: 7, users: 3 }
+  };
+}
+var DB;
+function norm() {
+  var d = defSettings(); DB.settings = DB.settings || {};
+  Object.keys(d).forEach(function (k) { if (DB.settings[k] == null) DB.settings[k] = d[k]; });
+  DB.recordings.forEach(function (r) { if (r.size == null) { r.size = 0; r.file = false; } });
+  if (!DB.v || DB.v < 2) {
+    DB.cameras.forEach(function (c) { if (!c.source && c.status === 'online') c.status = 'offline'; });
+    DB.recordings = DB.recordings.filter(function (r) { return r.file; });
+    DB.v = 2;
+  }
+}
+function load() { try { DB = JSON.parse(localStorage.getItem(KEY)); } catch (e) { DB = null; } if (!DB) DB = seed(); norm(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {} }
+load();
+
+/* ---------- helpers ---------- */
+var $ = function (s, el) { return (el || document).querySelector(s); };
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function stamp() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function roleName(r) { return { admin: 'Administrator', operator: 'Security personnel' }[r] || r; }
+function cap(s) { return String(s || '').replace(/^./, function (c) { return c.toUpperCase(); }); }
+function logit(a, d) { DB.log.unshift({ at: stamp(), user: ME ? ME.username : '-', action: a, details: d || '' }); DB.log = DB.log.slice(0, 200); save(); }
+var toastT;
+function toast(m, bad) { var o = $('.toast'); if (o) o.remove(); var t = document.createElement('div'); t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = m; document.body.appendChild(t); clearTimeout(toastT); toastT = setTimeout(function () { t.remove(); }, 2600); }
+function tick() { var t = new Date().toLocaleTimeString('en-GB', { hour12: false }); $('#lclock').textContent = t; $('#clock').textContent = new Date().toLocaleDateString('en-GB') + '  ' + t; }
+tick(); setInterval(tick, 1000);
+
+/* ---------- video clip store (IndexedDB: holds the recorded videos in this browser) ---------- */
+var idb = null;
+function idbOpen() {
+  return new Promise(function (res, rej) {
+    if (idb) return res(idb);
+    try { var r = indexedDB.open('cctv_clips', 1); r.onupgradeneeded = function () { r.result.createObjectStore('clips'); }; r.onsuccess = function () { idb = r.result; res(idb); }; r.onerror = function () { rej(r.error); }; } catch (e) { rej(e); }
+  });
+}
+setInterval(function () { try { autoTick(); } catch (e) {} }, 1000);
+function clipOp(mode, fn) { return idbOpen().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction('clips', mode), rq = fn(t.objectStore('clips')); t.oncomplete = function () { res(rq && rq.result); }; t.onerror = function () { rej(t.error); }; }); }); }
+function clipPut(id, blob) { return clipOp('readwrite', function (s) { return s.put(blob, id); }); }
+function clipGet(id) { return clipOp('readonly', function (s) { return s.get(id); }); }
+function clipDel(id) { return clipOp('readwrite', function (s) { s['delete']('t' + id); return s['delete'](id); }).catch(function () {}); }
+function mbText(mb) { return mb >= 1024 ? (mb / 1024).toFixed(2) + ' GB' : (+mb).toFixed(1) + ' MB'; }
+function purgeOld() {
+  var days = Math.max(1, +DB.settings.retention_days || 30), d = new Date(Date.now() - days * 864e5);
+  var cut = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()), n = 0;
+  DB.recordings = DB.recordings.filter(function (r) { if (r.end && r.end < cut) { clipDel(r.id); n++; return false; } return true; });
+  if (n) { logit('recordings_purge', n + ' older than ' + days + ' days'); save(); }
+  return n;
+}
+
+/* ---------- camera hub: one real camera stream shared by the live view and the recorder ---------- */
+var hub = {};   // key -> { p: Promise<stream>, refs, video }
+var denied = false;
+function hubAcquire(key) {
+  var h = hub[key];
+  if (!h) {
+    h = hub[key] = { refs: 0, video: null, p: null };
+    h.p = new Promise(function (res, rej) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return rej(new Error('nocam'));
+      var n = /^webcam:(\d+)$/i.exec(key), vid = { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 15 } };
+      var go = function (dev) { if (dev) vid.deviceId = { exact: dev }; return navigator.mediaDevices.getUserMedia({ video: vid, audio: false }); };
+      (n ? navigator.mediaDevices.getUserMedia({ video: true }).then(function (t) { t.getTracks().forEach(function (x) { x.stop(); }); return navigator.mediaDevices.enumerateDevices(); }).then(function (ds) { var v = ds.filter(function (d) { return d.kind === 'videoinput'; }); if (!v[+n[1]]) throw new Error('nodev'); return go(v[+n[1]].deviceId); }) : go(null))
+        .then(function (st) {
+          var v = document.createElement('video'); v.muted = true; v.playsInline = true; v.autoplay = true; v.srcObject = st;
+          v.style.cssText = 'position:fixed;left:-9999px;width:2px;height:2px;opacity:0'; document.body.appendChild(v); v.play().catch(function () {});
+          h.video = v; res(st);
+        }, rej);
+    });
+    h.p['catch'](function (e) { if (hub[key] === h) delete hub[key]; if (e && /NotAllowed|Permission/i.test(e.name + e.message)) denied = true; });
+  }
+  h.refs++;
+  return h.p;
+}
+function hubRelease(key) {
+  var h = hub[key]; if (!h) return;
+  if (--h.refs > 0) return;
+  delete hub[key];
+  h.p.then(function (st) { st.getTracks().forEach(function (t) { t.stop(); }); if (h.video) h.video.remove(); }, function () {});
+}
+
+/* ---------- automatic recorder: records every online webcam camera in clips and saves each clip ---------- */
+var auto = {};          // cameraId -> { key, stream, mr, chunks, t0, start, code }
+var pending = {};       // cameraId -> true while the camera is still opening
+function isWebcamSrc(src) { return /^webcam(:\d+)?$/i.test(src || ''); }
+function wantedCams() { return (DB.settings.auto_record && window.MediaRecorder) ? DB.cameras.filter(function (c) { return c.status === 'online' && isWebcamSrc(c.source); }) : []; }
+function startSeg(cid, key, stream, code) {
+  var rec = { key: key, stream: stream, chunks: [], t0: Date.now(), start: stamp(), code: code, mr: null };
+  try {
+    rec.mr = new MediaRecorder(stream);
+    rec.mr.ondataavailable = function (ev) { if (ev.data && ev.data.size) rec.chunks.push(ev.data); };
+    rec.mr.onstop = function () { saveSeg(rec); };
+    rec.mr.start(2000);
+  } catch (e) { return null; }
+  auto[cid] = rec; return rec;
+}
+function saveSeg(rec) {
+  var blob = new Blob(rec.chunks, { type: 'video/webm' }); if (blob.size < 1500) return;
+  var h = hub[rec.key], v = h && h.video, end = stamp();
+  function put(thumb) {
+    var id = DB.next.recordings++, mb = +(blob.size / 1048576).toFixed(2);
+    DB.recordings.unshift({ id: id, camera: rec.code, start: rec.start, end: end, note: 'Auto-recorded', size: mb, file: true, auto: true });
+    save();
+    clipPut(id, blob).then(function () { return thumb ? clipPut('t' + id, thumb) : 0; }).then(function () { enforceCap(); liveRefresh(); },
+      function () { DB.recordings = DB.recordings.filter(function (r) { return r.id !== id; }); save(); DB.settings.auto_record = false; save(); toast('Browser storage is full - automatic recording switched off.', true); });
+  }
+  try {
+    var k = document.createElement('canvas'); k.width = 320; k.height = 180;
+    if (!v || !v.videoWidth) return put(null);
+    k.getContext('2d').drawImage(v, 0, 0, 320, 180); k.toBlob(function (b) { put(b); }, 'image/jpeg', .7);
+  } catch (e) { put(null); }
+}
+function enforceCap() {
+  var cap = Math.max(20, +DB.settings.cap_mb || 500), n = 0;
+  var tot = function () { return DB.recordings.reduce(function (a, r) { return a + (+r.size || 0); }, 0); };
+  while (tot() > cap) {
+    var olds = DB.recordings.filter(function (r) { return r.auto && r.file; }); if (!olds.length) break;
+    var o = olds[olds.length - 1]; clipDel(o.id); DB.recordings = DB.recordings.filter(function (r) { return r !== o; }); n++;
+  }
+  if (n) { logit('recordings_cap', n + ' oldest auto clip(s) removed (limit ' + cap + ' MB)'); save(); }
+}
+function liveRefresh() {
+  if (!ME || cur !== 'recordings' || $('#mbg')) return;
+  var a = document.activeElement; if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) return;
+  refresh();
+}
+function stopAuto() {
+  Object.keys(auto).forEach(function (cid) { var r = auto[cid]; delete auto[cid]; try { if (r.mr.state !== 'inactive') r.mr.stop(); } catch (e) {} setTimeout(function () { hubRelease(r.key); }, 400); });
+  pending = {};
+}
+function autoTick() {
+  if (!ME) return;
+  var want = wantedCams(), ids = {}, seg = Math.max(10, +DB.settings.segment_seconds || 60) * 1000;
+  want.forEach(function (c) {
+    ids[c.id] = 1; var r = auto[c.id];
+    if (r) {
+      if (r.key !== c.source.toLowerCase()) { delete auto[c.id]; try { r.mr.stop(); } catch (e) {} setTimeout(function () { hubRelease(r.key); }, 400); return; }
+      if (Date.now() - r.t0 >= seg) { try { r.mr.stop(); } catch (e) {} startSeg(c.id, r.key, r.stream, c.code); }
+    } else if (!pending[c.id] && !denied) {
+      pending[c.id] = 1; var key = c.source.toLowerCase();
+      hubAcquire(key).then(function (st) { delete pending[c.id]; if (!ME || !DB.settings.auto_record || auto[c.id]) { hubRelease(key); return; } startSeg(c.id, key, st, c.code); logit('auto_record_start', c.code); },
+        function () { delete pending[c.id]; });
+    }
+  });
+  Object.keys(auto).forEach(function (cid) { if (!ids[cid]) { var r = auto[cid]; delete auto[cid]; try { r.mr.stop(); } catch (e) {} setTimeout(function () { hubRelease(r.key); }, 400); } });
+  var pill = $('#recpill'), txt = $('#recTxt'), n = Object.keys(auto).length;
+  if (!window.MediaRecorder) { pill.className = 'pill'; txt.textContent = 'Recording not supported'; }
+  else if (!DB.settings.auto_record) { pill.className = 'pill'; txt.textContent = 'Auto-record OFF'; }
+  else if (denied) { pill.className = 'pill'; txt.textContent = 'Camera blocked - click here'; }
+  else if (!want.length) { pill.className = 'pill'; txt.textContent = 'No webcam camera online'; }
+  else if (!n) { pill.className = 'pill'; txt.textContent = 'Opening camera...'; }
+  else { var r0 = auto[Object.keys(auto)[0]], left = Math.max(0, Math.round((seg - (Date.now() - r0.t0)) / 1000)); pill.className = 'pill on'; txt.textContent = 'REC ' + n + ' cam - next clip in ' + Math.floor(left / 60) + ':' + pad(left % 60); }
+}
+function applyOrg() { $('#orgName').textContent = DB.settings.org_name; document.title = DB.settings.org_name + ' - CCTV Security System'; }
+
+var modalCleanup = null;
+function openModal(html, wide) {
+  closeModal();
+  var bg = document.createElement('div'); bg.className = 'modal-bg'; bg.id = 'mbg';
+  bg.innerHTML = '<div class="modal' + (wide ? ' wide' : '') + '">' + html + '</div>';
+  bg.addEventListener('mousedown', function (e) { if (e.target === bg) closeModal(); });
+  document.body.appendChild(bg); return bg;
+}
+function closeModal() { if (modalCleanup) { modalCleanup(); modalCleanup = null; } var m = $('#mbg'); if (m) m.remove(); }
+
+/* ---------- login ---------- */
+var ME = null, MAX = 5, fails = {};
+$('#lt').onclick = function () { var p = $('#lp'), s = p.type === 'password'; p.type = s ? 'text' : 'password'; this.textContent = s ? 'HIDE' : 'SHOW'; };
+$('#lform').onsubmit = function (e) {
+  e.preventDefault();
+  var u = $('#lu').value.trim(), p = $('#lp').value, er = $('#lerr');
+  function bad(m) { er.textContent = m; er.classList.remove('hidden'); $('#lu').style.borderColor = $('#lp').style.borderColor = 'var(--alert)'; }
+  if (!u || !p) return bad('Enter both a username and password.');
+  var user = DB.users.filter(function (x) { return x.username === u; })[0];
+  if (user && fails[u] >= MAX) return bad('Too many failed attempts. Reload the page to try again.');
+  if (user && user.status === 'disabled') return bad('This account has been disabled. Contact the administrator.');
+  if (!user || user.password !== p) { if (user) fails[u] = (fails[u] || 0) + 1; return bad('Invalid username or password.'); }
+  ME = user; fails = {}; logit('login', 'Signed in');
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#lp').value = ''; er.classList.add('hidden');
+  start();
+};
+$('#logout').onclick = function () { logit('logout', 'Signed out'); closeModal(); stopAuto(); ME = null; $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); $('#lu').value = ''; };
+
+$('#recpill').onclick = function () { if (!ME) return; if (denied) { denied = false; toast('Trying the camera again - click Allow if asked'); return; } DB.settings.auto_record = !DB.settings.auto_record; logit('auto_record', DB.settings.auto_record ? 'on' : 'off'); save(); toast('Automatic recording ' + (DB.settings.auto_record ? 'on' : 'off')); autoTick(); };
+
+/* ---------- navigation ---------- */
+var PAGES = {}, NAV = [
+  { id: 'dashboard',  label: 'Dashboard',       roles: ['admin', 'operator'], sub: 'Overview of your surveillance network' },
+  { id: 'monitoring', label: 'Live monitoring', roles: ['admin', 'operator'], sub: 'Click a camera to view its feed' },
+  { id: 'incidents',  label: 'Incidents',       roles: ['admin', 'operator'], sub: 'Logged and flagged security events' },
+  { id: 'recordings', label: 'Recordings',      roles: ['admin', 'operator'], sub: 'Live footage saved automatically - click Play to watch' },
+  { id: 'reports',    label: 'Reports',         roles: ['admin', 'operator'], sub: 'Summaries you can print' },
+  { id: 'cameras',    label: 'Cameras & zones', roles: ['admin'],             sub: 'Add, edit and remove cameras' },
+  { id: 'users',      label: 'Users',           roles: ['admin'],             sub: 'Manage who can sign in' },
+  { id: 'activity',   label: 'Activity log',    roles: ['admin'],             sub: 'Who did what, and when' },
+  { id: 'health',     label: 'System health',   roles: ['admin'],             sub: 'Storage, cameras and recording status' },
+  { id: 'settings',   label: 'Settings',        roles: ['admin', 'operator'], sub: 'Your password and system data' }
+];
+var cur = 'dashboard';
+function start() {
+  applyOrg(); purgeOld(); denied = false;
+  $('#whoName').textContent = ME.name; $('#whoRole').textContent = roleName(ME.role);
+  var items = NAV.filter(function (n) { return n.roles.indexOf(ME.role) > -1; });
+  $('#nav').innerHTML = items.map(function (n) { return '<button data-p="' + n.id + '">' + n.label + '</button>'; }).join('');
+  $('#nav').onclick = function (e) { var b = e.target.closest('button'); if (b) go(b.dataset.p); };
+  go('dashboard');
+}
+function go(id) {
+  closeModal(); cur = id;
+  var n = NAV.filter(function (x) { return x.id === id; })[0];
+  if (!n || n.roles.indexOf(ME.role) < 0) { toast('You do not have access to that page.', true); return; }
+  $('#title').textContent = n.label; $('#subtitle').textContent = n.sub;
+  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.p === id); });
+  PAGES[id]();
+}
+function refresh() { go(cur); }
+function table(heads, rows, empty) {
+  return '<div class="list"><table><thead><tr>' + heads.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    (rows.length ? rows.join('') : '<tr><td colspan="' + heads.length + '"><div class="empty">' + empty + '</div></td></tr>') + '</tbody></table></div>';
+}
+function badge(s) { return '<span class="badge ' + esc(s) + '">' + esc(cap(s)) + '</span>'; }
+function camByCode(c) { return DB.cameras.filter(function (x) { return x.code === c; })[0]; }
+
+/* ---------- dashboard ---------- */
+PAGES.dashboard = function () {
+  var on = DB.cameras.filter(function (c) { return c.status === 'online'; }).length;
+  var openInc = DB.incidents.filter(function (i) { return i.status !== 'resolved'; }).length;
+  var newAl = DB.alerts.filter(function (a) { return !a.ack; }).length;
+  $('#view').innerHTML =
+    '<div class="stats">' +
+    '<div class="stat"><div class="n">' + on + ' / ' + DB.cameras.length + '</div><div class="l">Cameras online</div></div>' +
+    '<div class="stat"><div class="n">' + newAl + '</div><div class="l">Unacknowledged alerts</div></div>' +
+    '<div class="stat"><div class="n">' + openInc + '</div><div class="l">Open incidents</div></div>' +
+    '<div class="stat"><div class="n">' + DB.recordings.length + '</div><div class="l">Saved recordings</div></div>' +
+    '<div class="stat"><div class="n">' + mbText(DB.recordings.reduce(function (a, r) { return a + (+r.size || 0); }, 0)) + '</div><div class="l">Footage stored</div></div></div>' +
+    '<section><h3>Alerts</h3>' + table(['Time', 'Camera', 'Message', ''], DB.alerts.map(function (a) {
+      return '<tr><td>' + esc(a.at) + '</td><td>' + esc(a.camera) + '</td><td>' + esc(a.msg) + '</td><td>' +
+        (a.ack ? badge('resolved').replace('Resolved', 'Acknowledged') : '<button class="btn small" data-ack="' + a.id + '">Acknowledge</button>') + '</td></tr>';
+    }), 'No alerts.') + '</section>' +
+    '<section><h3>Latest incidents</h3>' + table(['When', 'Incident', 'Camera', 'Severity', 'Status'], DB.incidents.slice(0, 5).map(function (i) {
+      return '<tr><td>' + esc(i.at) + '</td><td>' + esc(i.title) + '</td><td>' + esc(i.camera) + '</td><td>' + badge(i.severity) + '</td><td>' + badge(i.status) + '</td></tr>';
+    }), 'No incidents logged.') + '</section>';
+  $('#view').onclick = function (e) {
+    var b = e.target.closest('[data-ack]'); if (!b) return;
+    DB.alerts.forEach(function (a) { if (a.id == b.dataset.ack) a.ack = true; });
+    logit('alert_ack', 'Alert #' + b.dataset.ack); save(); toast('Alert acknowledged'); refresh();
+  };
+};
+
+/* ---------- live monitoring + viewer ---------- */
+var recorders = {};   // cameraId -> { mr, chunks, started }
+PAGES.monitoring = function () {
+  $('#view').innerHTML = '<div class="cam-grid">' + (DB.cameras.map(function (c) {
+    return '<div class="cam" data-cam="' + c.id + '"><div class="thumb ' + (c.status === 'online' ? 'live' : '') + '">' +
+      (c.status === 'online' ? '&#9679; LIVE' : cap(c.status)) + ((recorders[c.id] || auto[c.id]) ? '<span class="rec">&#9679; REC</span>' : '') + '</div>' +
+      '<div class="info">' + esc(c.code) + ' &middot; ' + esc(c.zone) + '<small>' + esc(c.location) + '</small></div></div>';
+  }).join('') || '<div class="empty">No cameras yet.</div>') + '</div>';
+  $('#view').onclick = function (e) { var c = e.target.closest('[data-cam]'); if (c) openCamera(+c.dataset.cam); };
+};
+
+function openCamera(id) {
+  var c = DB.cameras.filter(function (x) { return x.id === id; })[0]; if (!c) return;
+  var isLive = c.status === 'online', src = c.source || '';
+  var feed;
+  if (!isLive) feed = '<div style="color:var(--muted)">Camera is ' + esc(c.status) + '</div>';
+  else if (isWebcamSrc(src)) feed = '<video id="wv" autoplay muted playsinline></video><span class="ov mono">' + esc(c.code) + '</span>';
+  else if (/\.(mp4|webm)(\?|$)/i.test(src)) feed = '<video id="wv" src="' + esc(src) + '" autoplay muted loop controls playsinline></video>';
+  else if (/^https?:/i.test(src)) feed = '<img src="' + esc(src) + '" alt="feed" style="width:100%;height:100%;object-fit:cover">';
+  else feed = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No camera connected. Open Cameras &amp; zones and set this camera\'s source to webcam or a stream address.</div>';
+  var m = openModal(
+    '<h3>' + esc(c.code) + ' - ' + esc(c.location) + '</h3><div class="feed">' + feed + '<span class="recdot mono hidden" id="recdot">&#9679; REC</span></div>' +
+    '<div class="note">' + (isWebcamSrc(src) ? "Live picture from this computer's camera. Click Allow if the browser asks." : src ? 'Showing the stream set for this camera.' : 'This camera has no source yet.') +
+    ' Zone: ' + esc(c.zone) + ' &middot; Status: ' + esc(cap(c.status)) + '</div>' +
+    '<div class="actions"><button class="btn" id="bRec"' + (isLive ? '' : ' disabled') + '>Start recording</button>' +
+    '<button class="btn ghost" id="bSnap"' + (isLive ? '' : ' disabled') + '>Snapshot</button>' +
+    '<button class="btn ghost" id="bAl"' + (isLive ? '' : ' disabled') + '>Raise test alert</button>' +
+    '<button class="btn ghost" id="bInc">Report incident</button><button class="btn ghost" id="bX">Close</button></div>', true);
+  $('#bX', m).onclick = closeModal;
+
+  var wv = $('#wv', m), closed = false, cv = $('#sim', m), simT = null, feedEl = $('.feed', m);
+  function fail(msg) { feedEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">' + esc(msg) + '</div>'; }
+  var hkey = null;
+  if (wv && isWebcamSrc(src)) {
+    hkey = src.toLowerCase(); denied = false;
+    hubAcquire(hkey).then(function (st) { if (closed) { hubRelease(hkey); hkey = null; return; } wv.srcObject = st; }, function () { hkey = null; fail('Could not open the camera. Click Allow when the browser asks, and make sure no other app is using it.'); });
+  }
+  if (cv) {
+    var g = cv.getContext('2d'), t = 0;
+    var draw = function () {
+      g.fillStyle = '#0a0f12'; g.fillRect(0, 0, 640, 360);
+      for (var i = 0; i < 160; i++) { g.fillStyle = 'rgba(95,166,72,' + (Math.random() * .12) + ')'; g.fillRect(Math.random() * 640, Math.random() * 360, 2 + Math.random() * 18, 1); }
+      g.fillStyle = 'rgba(95,166,72,.14)'; g.fillRect(0, (t * 4) % 360, 640, 18);
+      g.fillStyle = '#5FA648'; g.font = '14px monospace'; g.fillText(c.code + '  ' + c.location, 16, 26); g.fillText(new Date().toLocaleString('en-GB'), 16, 346);
+      if (recorders[c.id]) { g.fillStyle = '#D9614A'; g.beginPath(); g.arc(610, 22, 6, 0, 7); g.fill(); g.fillText('REC', 566, 27); }
+      t++;
+    };
+    draw(); simT = setInterval(draw, 120);
+  }
+  modalCleanup = function () { closed = true; clearInterval(simT); if (hkey) { hubRelease(hkey); hkey = null; } };
+
+  function recUI() { var r = !!recorders[c.id]; $('#bRec', m).textContent = r ? 'Stop recording' : 'Start recording'; $('#bRec', m).className = 'btn' + (r ? ' danger' : ''); $('#recdot', m).classList.toggle('hidden', !r); }
+  recUI();
+  $('#bRec', m).onclick = function () {
+    var r = recorders[c.id];
+    if (!r) {
+      var el = wv || cv, can = el && (el.captureStream || el.mozCaptureStream);
+      var rec = { started: stamp(), chunks: [], mr: null };
+      if (can && window.MediaRecorder) {
+        try { rec.mr = new MediaRecorder(el.captureStream ? el.captureStream() : el.mozCaptureStream()); rec.mr.ondataavailable = function (ev) { if (ev.data.size) rec.chunks.push(ev.data); }; rec.mr.start(1000); } catch (e) { rec.mr = null; }
+      }
+      recorders[c.id] = rec; logit('recording_start', c.code); toast('Recording started'); recUI();
+    } else {
+      delete recorders[c.id];
+      var finish = function (blob) {
+        var id = DB.next.recordings++;
+        DB.recordings.unshift({ id: id, camera: c.code, start: r.started, end: stamp(), note: blob ? 'Video saved' : 'Log entry only (no video source)', size: blob ? +(blob.size / 1048576).toFixed(2) : 0, file: !!blob });
+        save(); logit('recording_stop', c.code);
+        if (blob) clipPut(id, blob).then(function () { toast('Recording stopped - saved under Recordings'); }, function () { toast('Recording logged, but the browser could not store the video.', true); });
+        else toast('Recording stopped and logged');
+      };
+      if (r.mr && r.mr.state !== 'inactive') { r.mr.onstop = function () { finish(new Blob(r.chunks, { type: 'video/webm' })); }; r.mr.stop(); } else finish(null);
+      recUI();
+    }
+  };
+  $('#bSnap', m).onclick = function () {
+    var el = wv || cv; if (!el) return toast('Nothing to capture', true);
+    var w = el.videoWidth || el.width || 640, h = el.videoHeight || el.height || 360, k = document.createElement('canvas'); k.width = w; k.height = h;
+    try { k.getContext('2d').drawImage(el, 0, 0, w, h); var a = document.createElement('a'); a.href = k.toDataURL('image/png'); a.download = c.code.replace(' ', '') + '_snapshot.png'; document.body.appendChild(a); a.click(); a.remove(); logit('snapshot', c.code); toast('Snapshot saved'); } catch (e) { toast('Could not capture this feed', true); }
+  };
+  $('#bAl', m).onclick = function () { DB.alerts.unshift({ id: DB.next.alerts++, camera: c.code, msg: 'Test motion alert', at: stamp(), ack: false }); save(); logit('alert_test', c.code); toast('Test alert raised'); };
+  $('#bInc', m).onclick = function () { incidentForm(c.code); };
+}
+
+/* ---------- incidents ---------- */
+PAGES.incidents = function () {
+  $('#view').innerHTML = '<div class="head-row"><h3>All incidents</h3><button class="btn" id="add">Report incident</button></div>' +
+    table(['When', 'Incident', 'Camera', 'Severity', 'Status', 'By', ''], DB.incidents.map(function (i) {
+      return '<tr><td>' + esc(i.at) + '</td><td>' + esc(i.title) + '<br><span class="note">' + esc(i.desc) + '</span></td><td>' + esc(i.camera) + '</td><td>' + badge(i.severity) + '</td><td>' + badge(i.status) + '</td><td>' + esc(i.by) + '</td>' +
+        '<td><div class="actions"><select data-st="' + i.id + '" style="width:auto;padding:5px"><option value="open"' + (i.status === 'open' ? ' selected' : '') + '>Open</option><option value="investigating"' + (i.status === 'investigating' ? ' selected' : '') + '>Investigating</option><option value="resolved"' + (i.status === 'resolved' ? ' selected' : '') + '>Resolved</option></select>' +
+        (ME.role === 'admin' ? '<button class="btn small danger" data-del="' + i.id + '">Delete</button>' : '') + '</div></td></tr>';
+    }), 'No incidents logged.');
+  $('#add').onclick = function () { incidentForm(''); };
+  $('#view').onchange = function (e) { var s = e.target.closest('[data-st]'); if (!s) return; DB.incidents.forEach(function (i) { if (i.id == s.dataset.st) i.status = s.value; }); logit('incident_status', '#' + s.dataset.st + ' -> ' + s.value); save(); toast('Status updated'); refresh(); };
+  $('#view').onclick = function (e) { var d = e.target.closest('[data-del]'); if (!d || !confirm('Delete this incident?')) return; DB.incidents = DB.incidents.filter(function (i) { return i.id != d.dataset.del; }); logit('incident_delete', '#' + d.dataset.del); save(); refresh(); };
+};
+function incidentForm(code) {
+  var m = openModal('<h3>Report incident</h3>' +
+    '<div class="field"><label>Title</label><input id="f1"></div>' +
+    '<div class="row2"><div class="field"><label>Camera</label><select id="f2">' + DB.cameras.map(function (c) { return '<option' + (c.code === code ? ' selected' : '') + '>' + esc(c.code) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>Severity</label><select id="f3"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div></div>' +
+    '<div class="field"><label>Description</label><textarea id="f4" rows="3"></textarea></div>' +
+    '<div class="actions"><button class="btn" id="ok">Save incident</button><button class="btn ghost" id="no">Cancel</button></div>');
+  $('#no', m).onclick = function () { closeModal(); if (cur === 'monitoring') {} };
+  $('#ok', m).onclick = function () {
+    var t = $('#f1', m).value.trim(); if (!t) return toast('Give the incident a title.', true);
+    DB.incidents.unshift({ id: DB.next.incidents++, title: t, camera: $('#f2', m).value, severity: $('#f3', m).value, status: 'open', desc: $('#f4', m).value.trim(), by: ME.username, at: stamp() });
+    logit('incident_add', t); save(); closeModal(); toast('Incident saved'); if (cur === 'incidents' || cur === 'dashboard') refresh();
+  };
+}
+
+/* ---------- recordings ---------- */
+var recF = { camera: '', from: '', to: '' };
+PAGES.recordings = function () {
+  var rows = DB.recordings.filter(function (r) {
+    return (!recF.camera || r.camera === recF.camera) && (!recF.from || r.start.slice(0, 10) >= recF.from) && (!recF.to || r.start.slice(0, 10) <= recF.to);
+  });
+  $('#view').innerHTML = '<p class="note">Cameras with a webcam source record automatically - a new clip is added here every ' + esc(DB.settings.segment_seconds) + ' seconds while this page is open and you are signed in. Clips are kept in this browser, older than ' + esc(DB.settings.retention_days) + ' days or beyond ' + esc(DB.settings.cap_mb) + ' MB are deleted automatically.</p>' +
+    '<div class="actions" style="margin-bottom:14px;align-items:flex-end"><div><label>Camera</label><select id="fc" style="width:auto"><option value="">All</option>' + DB.cameras.map(function (c) { return '<option' + (c.code === recF.camera ? ' selected' : '') + '>' + esc(c.code) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label>From</label><input type="date" id="ff" value="' + esc(recF.from) + '" style="width:auto"></div><div><label>To</label><input type="date" id="ft" value="' + esc(recF.to) + '" style="width:auto"></div>' +
+    '<button class="btn ghost" id="fgo">Filter</button>' + (ME.role === 'admin' ? '<button class="btn danger" id="purge">Delete old recordings</button>' : '') + '</div>' +
+    table(['Picture', 'Camera', 'Started', 'Ended', 'Size', 'Note', ''], rows.map(function (r) {
+      return '<tr><td>' + (r.file ? '<img class="rthumb" data-th="' + r.id + '" alt="">' : '') + '</td><td>' + esc(r.camera) + '</td><td>' + esc(r.start) + '</td><td>' + esc(r.end) + '</td><td>' + (r.file ? mbText(r.size) : '-') + '</td><td>' + esc(r.note) + '</td><td><div class="actions">' +
+        (r.file ? '<button class="btn small" data-play="' + r.id + '">Play</button><button class="btn small ghost" data-dl="' + r.id + '">Download</button>' : '') +
+        (ME.role === 'admin' ? '<button class="btn small danger" data-del="' + r.id + '">Delete</button>' : '') + '</div></td></tr>';
+    }), 'No recordings match.');
+  document.querySelectorAll('img[data-th]').forEach(function (im) { clipGet('t' + im.dataset.th).then(function (b) { if (b && im.isConnected) { im.src = URL.createObjectURL(b); im.onload = function () { URL.revokeObjectURL(im.src); }; } }, function () {}); });
+  $('#fgo').onclick = function () { recF = { camera: $('#fc').value, from: $('#ff').value, to: $('#ft').value }; refresh(); };
+  var pg = $('#purge'); if (pg) pg.onclick = function () { if (confirm('Delete every recording older than ' + DB.settings.retention_days + ' days?')) { var n = purgeOld(); toast(n + ' recording(s) deleted'); refresh(); } };
+  $('#view').onclick = function (e) {
+    var b;
+    if ((b = e.target.closest('[data-play]'))) {
+      var id = +b.dataset.play;
+      clipGet(id).then(function (blob) {
+        if (!blob) return toast('This video is no longer stored in this browser.', true);
+        var url = URL.createObjectURL(blob);
+        var m = openModal('<h3>Recording #' + id + '</h3><div class="feed"><video src="' + url + '" controls autoplay playsinline></video></div><div class="actions" style="margin-top:12px"><button class="btn ghost" id="bX">Close</button></div>', true);
+        $('#bX', m).onclick = closeModal; modalCleanup = function () { URL.revokeObjectURL(url); };
+      }, function () { toast('Could not read the stored video.', true); });
+    } else if ((b = e.target.closest('[data-dl]'))) {
+      var rid = +b.dataset.dl, rec = DB.recordings.filter(function (x) { return x.id === rid; })[0];
+      clipGet(rid).then(function (blob) {
+        if (!blob) return toast('This video is no longer stored in this browser.', true);
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = rec.camera.replace(' ', '') + '_' + rec.start.replace(/[: ]/g, '-') + '.webm'; document.body.appendChild(a); a.click(); a.remove();
+      });
+    } else if ((b = e.target.closest('[data-del]'))) {
+      if (!confirm('Delete this recording?')) return;
+      clipDel(+b.dataset.del); DB.recordings = DB.recordings.filter(function (r) { return r.id != b.dataset.del; }); logit('recording_delete', '#' + b.dataset.del); save(); refresh();
+    }
+  };
+};
+
+/* ---------- reports ---------- */
+var repR = null;
+PAGES.reports = function () {
+  if (!repR) { var t = new Date(), f = new Date(Date.now() - 29 * 864e5), iso = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }; repR = { from: iso(f), to: iso(t) }; }
+  var inR = function (x) { var d = x.slice(0, 10); return d >= repR.from && d <= repR.to; };
+  var inc = DB.incidents.filter(function (i) { return inR(i.at); }), al = DB.alerts.filter(function (a) { return inR(a.at); }), rc = DB.recordings.filter(function (r) { return inR(r.start); });
+  function count(arr, f) { var o = {}; arr.forEach(function (x) { var k = f(x); o[k] = (o[k] || 0) + 1; }); return o; }
+  function bars(o, empty) { var k = Object.keys(o).sort(function (a, b) { return o[b] - o[a]; }), mx = Math.max.apply(null, k.map(function (x) { return o[x]; }).concat([1])); return k.length ? '<div class="list" style="padding:12px 16px">' + k.map(function (x) { return '<div style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="width:130px;font-size:13px">' + esc(cap(x)) + '</span><span style="flex:1;background:var(--panel2);border-radius:4px;height:10px"><span style="display:block;height:10px;border-radius:4px;background:var(--accent);width:' + Math.round(o[x] / mx * 100) + '%"></span></span><b style="width:30px;text-align:right">' + o[x] + '</b></div>'; }).join('') + '</div>' : '<div class="list"><div class="empty">' + empty + '</div></div>'; }
+  $('#view').innerHTML = '<div class="actions" style="margin-bottom:16px;align-items:flex-end"><div><label>From</label><input type="date" id="rf" value="' + repR.from + '" style="width:auto"></div><div><label>To</label><input type="date" id="rt" value="' + repR.to + '" style="width:auto"></div><button class="btn ghost" id="rgo">Update</button><button class="btn" id="rpr">Print report</button></div>' +
+    '<h3 style="margin:0 0 4px">' + esc(DB.settings.org_name) + ' - Security report</h3><p class="note">' + repR.from + ' to ' + repR.to + '</p>' +
+    '<div class="stats"><div class="stat"><div class="n">' + inc.length + '</div><div class="l">Incidents</div></div><div class="stat"><div class="n">' + inc.filter(function (i) { return i.status !== 'resolved'; }).length + '</div><div class="l">Still open</div></div><div class="stat"><div class="n">' + al.length + '</div><div class="l">Alerts</div></div><div class="stat"><div class="n">' + rc.length + '</div><div class="l">Recordings</div></div></div>' +
+    '<section><h3>Incidents by severity</h3>' + bars(count(inc, function (i) { return i.severity; }), 'No incidents in this period.') + '</section>' +
+    '<section><h3>Incidents by status</h3>' + bars(count(inc, function (i) { return i.status; }), 'No incidents in this period.') + '</section>' +
+    '<section><h3>Incidents by camera</h3>' + bars(count(inc, function (i) { return i.camera; }), 'No incidents in this period.') + '</section>' +
+    '<section><h3>Alerts by camera</h3>' + bars(count(al, function (a) { return a.camera; }), 'No alerts in this period.') + '</section>';
+  $('#rgo').onclick = function () { repR = { from: $('#rf').value || repR.from, to: $('#rt').value || repR.to }; refresh(); };
+  $('#rpr').onclick = function () { window.print(); };
+  $('#view').onclick = null;
+};
+
+/* ---------- cameras & zones (admin) ---------- */
+PAGES.cameras = function () {
+  $('#view').innerHTML = '<section><div class="head-row"><h3>Cameras</h3><button class="btn" id="addCam">Add camera</button></div>' +
+    table(['Code', 'Zone', 'Location', 'Source', 'Status', ''], DB.cameras.map(function (c) {
+      return '<tr><td>' + esc(c.code) + '</td><td>' + esc(c.zone) + '</td><td>' + esc(c.location) + '</td><td>' + esc(c.source || 'not connected') + '</td><td>' + badge(c.status) + '</td>' +
+        '<td><div class="actions"><button class="btn small ghost" data-ed="' + c.id + '">Edit</button><button class="btn small danger" data-del="' + c.id + '">Delete</button></div></td></tr>';
+    }), 'No cameras.') + '</section>' +
+    '<section><div class="head-row"><h3>Zones</h3><button class="btn ghost" id="addZone">Add zone</button></div><div class="list"><table><tbody>' +
+    DB.zones.map(function (z) { return '<tr><td>' + esc(z) + '</td><td style="text-align:right"><button class="btn small danger" data-zdel="' + esc(z) + '">Delete</button></td></tr>'; }).join('') + '</tbody></table></div></section>';
+  $('#addCam').onclick = function () { camForm(null); };
+  $('#addZone').onclick = function () { var z = (prompt('New zone name') || '').trim(); if (z && DB.zones.indexOf(z) < 0) { DB.zones.push(z); save(); refresh(); } };
+  $('#view').onclick = function (e) {
+    var b;
+    if ((b = e.target.closest('[data-ed]'))) camForm(+b.dataset.ed);
+    else if ((b = e.target.closest('[data-del]'))) { if (confirm('Delete this camera?')) { DB.cameras = DB.cameras.filter(function (c) { return c.id != b.dataset.del; }); logit('camera_delete', '#' + b.dataset.del); save(); refresh(); } }
+    else if ((b = e.target.closest('[data-zdel]'))) { var z = b.dataset.zdel; if (DB.cameras.some(function (c) { return c.zone === z; })) return toast('Move that zone\'s cameras first.', true); DB.zones = DB.zones.filter(function (x) { return x !== z; }); save(); refresh(); }
+  };
+};
+function camForm(id) {
+  var c = id ? DB.cameras.filter(function (x) { return x.id === id; })[0] : { code: '', zone: DB.zones[0], location: '', source: '', status: 'online' };
+  var m = openModal('<h3>' + (id ? 'Edit' : 'Add') + ' camera</h3>' +
+    '<div class="row2"><div class="field"><label>Code</label><input id="c1" value="' + esc(c.code) + '" placeholder="CAM 07"></div>' +
+    '<div class="field"><label>Zone</label><select id="c2">' + DB.zones.map(function (z) { return '<option' + (z === c.zone ? ' selected' : '') + '>' + esc(z) + '</option>'; }).join('') + '</select></div></div>' +
+    '<div class="field"><label>Location</label><input id="c3" value="' + esc(c.location) + '"></div>' +
+    '<div class="field"><label>Source (optional)</label><input id="c4" value="' + esc(c.source) + '" placeholder="webcam   or   webcam:1   or   http://..."></div>' +
+    '<p class="note">webcam = this computer\'s camera (webcam:1 = the second camera). http://... = an IP camera / phone app stream. Empty = not connected. Webcam cameras record automatically.</p>' +
+    '<div class="field"><label>Status</label><select id="c5">' + ['online', 'offline', 'maintenance'].map(function (s) { return '<option value="' + s + '"' + (s === c.status ? ' selected' : '') + '>' + cap(s) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="actions"><button class="btn" id="ok">Save</button><button class="btn ghost" id="no">Cancel</button></div>');
+  $('#no', m).onclick = closeModal;
+  $('#ok', m).onclick = function () {
+    var code = $('#c1', m).value.trim(), loc = $('#c3', m).value.trim(), src = $('#c4', m).value.trim();
+    if (!code || !loc) return toast('Code and location are required.', true);
+    if (src && !isWebcamSrc(src) && !/^https?:\/\//i.test(src) && !/\.(mp4|webm)$/i.test(src)) return toast('Source must be webcam, http://..., or a .mp4/.webm file.', true);
+    if (DB.cameras.some(function (x) { return x.code === code && x.id !== id; })) return toast('That camera code is already used.', true);
+    if (isWebcamSrc(src)) src = src.toLowerCase();
+    var o = { code: code, zone: $('#c2', m).value, location: loc, source: src, status: $('#c5', m).value };
+    if (id) { Object.assign(c, o); } else { o.id = DB.next.cameras++; DB.cameras.push(o); }
+    logit(id ? 'camera_edit' : 'camera_add', code); save(); closeModal(); toast('Camera saved'); refresh();
+  };
+}
+
+/* ---------- users (admin) ---------- */
+PAGES.users = function () {
+  $('#view').innerHTML = '<div class="head-row"><h3>Accounts</h3><button class="btn" id="addU">Add user</button></div>' +
+    table(['Name', 'Username', 'Role', 'Status', ''], DB.users.map(function (u) {
+      var self = u.id === ME.id;
+      return '<tr><td>' + esc(u.name) + '</td><td>' + esc(u.username) + '</td><td>' + esc(roleName(u.role)) + '</td><td>' + badge(u.status) + '</td><td><div class="actions">' +
+        '<button class="btn small ghost" data-rs="' + u.id + '">Reset password</button>' +
+        (self ? '' : '<button class="btn small ghost" data-tg="' + u.id + '">' + (u.status === 'active' ? 'Disable' : 'Enable') + '</button><button class="btn small danger" data-del="' + u.id + '">Delete</button>') + '</div></td></tr>';
+    }), 'No users.');
+  $('#addU').onclick = function () {
+    var m = openModal('<h3>Add user</h3><div class="field"><label>Full name</label><input id="u1"></div><div class="row2"><div class="field"><label>Username</label><input id="u2"></div>' +
+      '<div class="field"><label>Role</label><select id="u3"><option value="operator">Security personnel</option><option value="admin">Administrator</option></select></div></div>' +
+      '<div class="field"><label>Password (min 6 characters)</label><input id="u4" type="text"></div><div class="actions"><button class="btn" id="ok">Create</button><button class="btn ghost" id="no">Cancel</button></div>');
+    $('#no', m).onclick = closeModal;
+    $('#ok', m).onclick = function () {
+      var n = $('#u1', m).value.trim(), un = $('#u2', m).value.trim(), pw = $('#u4', m).value;
+      if (!n || !un) return toast('Name and username are required.', true);
+      if (pw.length < 6) return toast('Password must be at least 6 characters.', true);
+      if (DB.users.some(function (x) { return x.username === un; })) return toast('That username is taken.', true);
+      DB.users.push({ id: DB.next.users++, name: n, username: un, password: pw, role: $('#u3', m).value, status: 'active' });
+      logit('user_add', un); save(); closeModal(); toast('User created'); refresh();
+    };
+  };
+  $('#view').onclick = function (e) {
+    var b;
+    if ((b = e.target.closest('[data-rs]'))) { var pw = prompt('New password (min 6 characters)'); if (pw && pw.length >= 6) { DB.users.forEach(function (u) { if (u.id == b.dataset.rs) u.password = pw; }); logit('password_reset', '#' + b.dataset.rs); save(); toast('Password changed'); } else if (pw) toast('Too short.', true); }
+    else if ((b = e.target.closest('[data-tg]'))) { DB.users.forEach(function (u) { if (u.id == b.dataset.tg) u.status = u.status === 'active' ? 'disabled' : 'active'; }); save(); refresh(); }
+    else if ((b = e.target.closest('[data-del]'))) { if (confirm('Delete this user?')) { DB.users = DB.users.filter(function (u) { return u.id != b.dataset.del; }); logit('user_delete', '#' + b.dataset.del); save(); refresh(); } }
+  };
+};
+
+/* ---------- activity ---------- */
+PAGES.activity = function () {
+  $('#view').innerHTML = table(['Time', 'User', 'Action', 'Details'], DB.log.map(function (l) { return '<tr><td>' + esc(l.at) + '</td><td>' + esc(l.user) + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.details) + '</td></tr>'; }), 'Nothing logged yet.');
+};
+
+/* ---------- system health (admin) ---------- */
+PAGES.health = function () {
+  var render = function (usage, quota) {
+    var stored = DB.recordings.reduce(function (a, r) { return a + (+r.size || 0); }, 0), active = Object.keys(recorders).length + Object.keys(auto).length;
+    var cams = DB.cameras.map(function (c) {
+      var last = DB.recordings.filter(function (r) { return r.camera === c.code; }).map(function (r) { return r.start; }).sort().pop() || '-';
+      var mb = DB.recordings.filter(function (r) { return r.camera === c.code; }).reduce(function (a, r) { return a + (+r.size || 0); }, 0);
+      return '<tr><td>' + esc(c.code) + '</td><td>' + esc(c.location) + '</td><td>' + badge(c.status) + '</td><td>' + ((recorders[c.id] || auto[c.id]) ? '<span class="badge online">Recording now</span>' : 'Not recording') + '</td><td>' + esc(last) + '</td><td>' + mbText(mb) + '</td></tr>';
+    });
+    $('#view').innerHTML = '<div class="stats">' +
+      '<div class="stat"><div class="n">' + (DB.cameras.filter(function (c) { return c.status === 'online'; }).length) + ' / ' + DB.cameras.length + '</div><div class="l">Cameras online</div></div>' +
+      '<div class="stat"><div class="n">' + active + '</div><div class="l">Recording right now</div></div>' +
+      '<div class="stat"><div class="n">' + mbText(stored) + '</div><div class="l">Footage stored</div></div>' +
+      '<div class="stat"><div class="n">' + (quota ? mbText(Math.max(0, (quota - usage) / 1048576)) : 'n/a') + '</div><div class="l">Browser space left</div></div></div>' +
+      '<p class="note">In this browser version, recording happens only while this page is open and a camera window is recording. For 24/7 recording of real IP cameras, use the XAMPP version with the recorder service.</p>' +
+      '<section><h3>Cameras</h3>' + table(['Camera', 'Location', 'Status', 'Recording', 'Last footage', 'Stored'], cams, 'No cameras.') + '</section>' +
+      '<p class="note">Footage older than ' + esc(DB.settings.retention_days) + ' days is deleted automatically (change it under Settings).</p>';
+    $('#view').onclick = null;
+  };
+  render(0, 0);
+  if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(function (e) { if (cur === 'health') render(e.usage || 0, e.quota || 0); });
+};
+
+/* ---------- settings ---------- */
+PAGES.settings = function () {
+  var adm = ME.role === 'admin';
+  $('#view').innerHTML = '<div class="row2" style="align-items:start"><div><section><h3>Change my password</h3>' +
+    '<div class="field"><label>Current password</label><input id="p1" type="password"></div><div class="field"><label>New password (min 6)</label><input id="p2" type="password"></div>' +
+    '<button class="btn" id="chg">Change password</button></section></div>' +
+    (adm ? '<div><section><h3>System settings</h3><div class="field"><label>Organisation name</label><input id="s1" value="' + esc(DB.settings.org_name) + '"></div>' +
+      '<div class="field"><label>Keep recordings for (days)</label><input id="s2" type="number" min="1" max="3650" value="' + esc(DB.settings.retention_days) + '"></div>' +
+      '<div class="row2"><div class="field"><label>Clip length (seconds)</label><input id="s3" type="number" min="10" max="3600" value="' + esc(DB.settings.segment_seconds) + '"></div><div class="field"><label>Storage limit (MB)</label><input id="s4" type="number" min="20" max="20000" value="' + esc(DB.settings.cap_mb) + '"></div></div>' +
+      '<div class="field"><label>Automatic recording</label><select id="s5"><option value="1"' + (DB.settings.auto_record ? ' selected' : '') + '>On</option><option value="0"' + (DB.settings.auto_record ? '' : ' selected') + '>Off</option></select></div><button class="btn" id="ssave">Save settings</button></section>' +
+      '<section><h3>Backup</h3><p class="note">Saves accounts, cameras, incidents, alerts, the recordings list and the activity log to a file. Recorded videos are not included; download them from the Recordings page.</p>' +
+      '<div class="actions"><button class="btn" id="bk">Download backup</button><button class="btn ghost" id="rs">Restore from backup</button><input type="file" id="rsf" accept=".json,application/json" class="hidden"></div></section>' +
+      '<section><h3>System data</h3><p class="note">Resetting restores the sample cameras, incidents and the two default accounts, and deletes all stored videos.</p><button class="btn danger" id="reset">Reset demo data</button></section></div>' : '') + '</div>';
+  $('#chg').onclick = function () {
+    var a = $('#p1').value, b = $('#p2').value;
+    if (a !== ME.password) return toast('Current password is wrong.', true);
+    if (b.length < 6) return toast('New password must be at least 6 characters.', true);
+    ME.password = b; logit('password_change', ''); save(); $('#p1').value = $('#p2').value = ''; toast('Password changed');
+  };
+  if (!adm) return;
+  $('#ssave').onclick = function () {
+    var n = $('#s1').value.trim(), d = parseInt($('#s2').value, 10);
+    if (!n) return toast('Organisation name is required.', true);
+    if (!(d >= 1 && d <= 3650)) return toast('Retention must be between 1 and 3650 days.', true);
+    var sg = parseInt($('#s3').value, 10), cp = parseInt($('#s4').value, 10);
+    if (!(sg >= 10 && sg <= 3600)) return toast('Clip length must be 10 to 3600 seconds.', true);
+    if (!(cp >= 20 && cp <= 20000)) return toast('Storage limit must be 20 to 20000 MB.', true);
+    DB.settings = { org_name: n, retention_days: d, segment_seconds: sg, cap_mb: cp, auto_record: $('#s5').value === '1' }; enforceCap(); logit('settings_save', ''); save(); applyOrg(); toast('Settings saved');
+  };
+  $('#bk').onclick = function () {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(DB, null, 1)], { type: 'application/json' }));
+    a.download = 'cctv-backup-' + stamp().replace(/[: ]/g, '-') + '.json'; document.body.appendChild(a); a.click(); a.remove(); logit('backup', 'Backup downloaded'); toast('Backup downloaded');
+  };
+  $('#rs').onclick = function () { $('#rsf').click(); };
+  $('#rsf').onchange = function () {
+    var f = this.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var d = JSON.parse(rd.result);
+        if (!d || !Array.isArray(d.users) || !Array.isArray(d.cameras) || !Array.isArray(d.incidents) || !d.users.some(function (u) { return u.role === 'admin'; })) throw new Error('bad');
+        if (!confirm('Replace ALL current data with this backup? You will be signed out.')) return;
+        DB = d; norm(); save(); location.reload();
+      } catch (e) { toast('That file is not a valid backup.', true); }
+    };
+    rd.readAsText(f);
+  };
+  $('#reset').onclick = function () {
+    if (!confirm('Reset all data and delete stored videos? You will be signed out.')) return;
+    localStorage.removeItem(KEY);
+    try { indexedDB.deleteDatabase('cctv_clips'); } catch (e) {}
+    setTimeout(function () { location.reload(); }, 300);
+  };
+};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CCTV-Based Security System</title>
+<style>
+  :root{
+    --bg:#0E1318; --panel:#171E25; --panel2:#1C242C; --line:#2B3038; --accent:#5FA648; --accent-dim:#274420;
+    --text:#E7ECEE; --muted:#8A97A3; --alert:#D9614A; --alert-bg:#2A1712; --warn:#D9A24A;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%; margin:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:-apple-system,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+  a,button{font-family:inherit;}
+  .hidden{display:none !important;}
+
+  /* ===== LOGIN SCREEN ===== */
+  #screen-login{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+    background-image:linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:36px 36px; background-position:center;
+  }
+  .wrap{width:100%; max-width:420px;}
+  .status{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding:0 4px; font-size:12px; color:var(--muted);}
+  .status .dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); margin-right:6px; box-shadow:0 0 6px var(--accent);}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:32px 28px 28px; box-shadow:0 20px 60px rgba(0,0,0,.45);}
+  .card h1{margin:0 0 4px; font-size:18px; font-weight:600;}
+  .card .sub{margin:0 0 26px; font-size:13px; color:var(--muted);}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .field{margin-bottom:16px;}
+  .field input{width:100%; padding:11px 12px; border-radius:6px; border:1px solid var(--line); background:#0F151A; color:var(--text); font-size:14px; outline:none; transition:border-color .15s ease;}
+  .field input:focus{border-color:var(--accent);}
+  .field input.bad{border-color:var(--alert);}
+  .pw-row{position:relative;}
+  .pw-row button{position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:11px; cursor:pointer; padding:4px 6px;}
+  .submit{width:100%; padding:12px; margin-top:6px; border-radius:6px; border:1px solid var(--accent-dim); background:var(--accent); color:#0E1318; font-size:14px; font-weight:600; cursor:pointer;}
+  .submit:hover{filter:brightness(1.08);}
+  .submit:disabled{opacity:.6; cursor:default;}
+  .error{display:none; margin-top:14px; padding:10px 12px; border-radius:6px; background:var(--alert-bg); border:1px solid var(--alert); color:#F0B4A6; font-size:13px;}
+  .error.show{display:block;}
+  .hint{margin-top:18px; font-size:11px; color:var(--muted); text-align:center; line-height:1.5;}
+  .hint code{color:var(--text);}
+  .success{display:none; text-align:center;}
+  .success.show{display:block;}
+  .success .tick{width:44px; height:44px; margin:0 auto 14px; border-radius:50%; border:1px solid var(--accent); display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:20px;}
+  .success h2{margin:0 0 6px; font-size:16px;}
+  .success p{margin:0; font-size:13px; color:var(--muted);}
+
+  /* ===== APP SCREEN ===== */
+  #screen-app{display:flex; min-height:100vh;}
+  .side{width:220px; flex:0 0 220px; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 12px; position:sticky; top:0; height:100vh; padding-top:calc(18px + env(safe-area-inset-top,0px));}
+  .brand{display:flex; align-items:center; gap:8px; padding:4px 8px 20px; font-size:13px; font-weight:600;}
+  .brand .dot{width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 6px var(--accent);}
+  nav{display:flex; flex-direction:column; gap:2px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:10px 10px; border-radius:6px; border:1px solid transparent; color:var(--muted); font-size:13px; cursor:pointer; background:none; text-align:left; width:100%;}
+  .nav-item:hover{background:var(--panel2); color:var(--text);}
+  .nav-item.active{background:var(--accent-dim); border-color:var(--accent); color:var(--text);}
+  .nav-item .ico{width:16px; text-align:center; font-size:13px;}
+  .side-spacer{flex:1;}
+  .side-divider{height:1px; background:var(--line); margin:10px 4px 12px;}
+  .nav-item.logout{color:var(--alert);}
+  .nav-item.logout:hover{background:var(--alert-bg);}
+
+  main{flex:1; min-width:0; padding:22px 28px 40px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;}
+  .topbar h1{margin:0; font-size:19px; font-weight:600;}
+  .topbar .sub{margin:2px 0 0; font-size:12px; color:var(--muted);}
+  .clock{font-size:12px; color:var(--muted);}
+  .clock .dot{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin-right:6px; box-shadow:0 0 5px var(--accent);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:24px;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px;}
+  .stat .label{font-size:11px; color:var(--muted); margin-bottom:6px;}
+  .stat .val{font-size:22px; font-weight:600;}
+  .stat .val.warn{color:var(--warn);}
+  .stat .val.alert{color:var(--alert);}
+
+  section{margin-bottom:26px;}
+  section h2{font-size:13px; margin:0 0 12px; color:var(--muted); font-weight:600; letter-spacing:.02em;}
+
+  .cam-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .cam{background:#0B0F13; border:1px solid var(--line); border-radius:8px; aspect-ratio:16/10; display:flex; flex-direction:column; justify-content:space-between; padding:8px 10px; cursor:pointer;}
+  .cam:hover{border-color:var(--accent);}
+  .cam .tag{display:flex; align-items:center; gap:5px; font-size:10px; color:var(--accent);}
+  .cam .tag .dot{width:5px; height:5px; border-radius:50%; background:var(--accent); box-shadow:0 0 4px var(--accent);}
+  .cam .name{font-size:12px; color:var(--muted);}
+  .cam.offline{opacity:.55;}
+  .cam.offline .tag{color:var(--alert);}
+  .cam.offline .tag .dot{background:var(--alert); box-shadow:none;}
+
+  .list{background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .row{display:flex; align-items:center; gap:14px; padding:12px 16px; border-bottom:1px solid var(--line); font-size:13px;}
+  .row:last-child{border-bottom:none;}
+  .row .badge{font-size:10px; padding:3px 8px; border-radius:20px; border:1px solid var(--line); color:var(--muted);}
+  .row .badge.open{color:var(--alert); border-color:var(--alert);}
+  .row .badge.review{color:var(--warn); border-color:var(--warn);}
+  .row .badge.closed{color:var(--accent); border-color:var(--accent);}
+  .row .t1{flex:1; min-width:0;}
+  .row .t2{color:var(--muted); font-size:12px; flex:0 0 auto;}
+  .placeholder{color:var(--muted); font-size:13px; background:var(--panel); border:1px dashed var(--line); border-radius:8px; padding:24px; text-align:center;}
+
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row .t{font-size:13px;}
+  .toggle-row .d{font-size:11px; color:var(--muted); margin-top:2px;}
+  .switch{width:36px; height:20px; border-radius:20px; background:var(--line); position:relative; cursor:pointer; border:none;}
+  .switch.on{background:var(--accent);}
+  .switch .knob{position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--text); transition:left .15s ease;}
+  .switch.on .knob{left:18px;}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="screen-login">
+  <div class="wrap">
+    <div class="status mono">
+      <span><span class="dot"></span>SECURE CONNECTION</span>
+      <span id="loginClock">--:--:--</span>
+    </div>
+    <div class="card">
+      <div id="loginView">
+        <h1>CCTV-Based Security System</h1>
+        <p class="sub">Sign in to access the surveillance console.</p>
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" autocomplete="username" placeholder="e.g. admin">
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="pw-row">
+              <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••">
+              <button type="button" id="togglePw" aria-pressed="false">SHOW</button>
+            </div>
+          </div>
+          <button type="submit" class="submit" id="submitBtn">Log in</button>
+          <div class="error" id="errorBox" role="alert" aria-live="assertive"></div>
+        </form>
+        <p class="hint">Demo credentials — username <code>admin</code>, password <code>admin123</code></p>
+      </div>
+      <div class="success" id="successView">
+        <div class="tick">✓</div>
+        <h2>Access granted</h2>
+        <p>Redirecting to the surveillance dashboard…</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP SCREEN ===== -->
+<div id="screen-app" class="hidden">
+  <aside class="side">
+    <div class="brand"><span class="dot"></span>CCTV SECURITY</div>
+    <nav id="mainNav">
+      <button class="nav-item active" data-view="dashboard"><span class="ico">▤</span>Dashboard</button>
+      <button class="nav-item" data-view="monitoring"><span class="ico">◎</span>Live monitoring</button>
+      <button class="nav-item" data-view="incidents"><span class="ico">!</span>Incidents</button>
+      <button class="nav-item" data-view="recordings"><span class="ico">▶</span>Recordings</button>
+      <button class="nav-item" data-view="reports"><span class="ico">▦</span>Reports</button>
+      <button class="nav-item" data-view="settings"><span class="ico">⚙</span>Settings</button>
+    </nav>
+    <div class="side-spacer"></div>
+    <div class="side-divider"></div>
+    <button class="nav-item logout" id="logoutBtn"><span class="ico">⏻</span>Log out</button>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <p class="sub" id="pageSub">Overview of your surveillance network</p>
+      </div>
+      <div class="clock mono"><span class="dot"></span><span id="appClock">--:--:--</span></div>
+    </div>
+
+    <div class="view active" id="view-dashboard">
+      <div class="stats">
+        <div class="stat"><div class="label">Cameras online</div><div class="val">5 / 6</div></div>
+        <div class="stat"><div class="label">Open incidents</div><div class="val alert">2</div></div>
+        <div class="stat"><div class="label">Storage used</div><div class="val">74%</div></div>
+        <div class="stat"><div class="label">Active alerts</div><div class="val warn">1</div></div>
+      </div>
+      <section><h2>LIVE CAMERAS</h2><div class="cam-grid" id="dashCamGrid"></div></section>
+      <section><h2>RECENT INCIDENTS</h2><div class="list" id="dashIncidents"></div></section>
+    </div>
+
+    <div class="view" id="view-monitoring">
+      <section><h2>ALL CAMERAS</h2><div class="cam-grid" id="monCamGrid"></div></section>
+    </div>
+
+    <div class="view" id="view-incidents">
+      <section><h2>ALL INCIDENTS</h2><div class="list" id="incidentsList"></div></section>
+    </div>
+
+    <div class="view" id="view-recordings">
+      <section><h2>RECENT RECORDINGS</h2><div class="list" id="recordingsList"></div></section>
+    </div>
+
+    <div class="view" id="view-reports">
+      <section>
+        <h2>SUMMARY REPORTS</h2>
+        <div class="stats">
+          <div class="stat"><div class="label">Incidents this month</div><div class="val">14</div></div>
+          <div class="stat"><div class="label">Avg. response time</div><div class="val">6m</div></div>
+          <div class="stat"><div class="label">Uptime</div><div class="val">99.2%</div></div>
+        </div>
+        <div class="placeholder">Detailed exportable reports go here — connect to the reporting service to populate this view.</div>
+      </section>
+    </div>
+
+    <div class="view" id="view-settings">
+      <section>
+        <h2>SYSTEM SETTINGS</h2>
+        <div class="list">
+          <div class="toggle-row"><div><div class="t">Motion detection alerts</div><div class="d">Notify operators when a camera detects motion</div></div><button class="switch on"></button></div>
+          <div class="toggle-row"><div><div class="t">Auto-archive footage</div><div class="d">Move recordings older than 30 days to cold storage</div></div><button class="switch on"></button></div>
+          <div class="toggle-row"><div><div class="t">Email daily summary</div><div class="d">Send a daily incident summary to admins</div></div><button class="switch"></button></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  /* ---- shared clock ---- */
+  function tick(){
+    const s = new Date().toLocaleTimeString('en-GB',{hour12:false});
+    const a = document.getElementById('loginClock'); if(a) a.textContent = s;
+    const b = document.getElementById('appClock'); if(b) b.textContent = s;
+  }
+  tick(); setInterval(tick,1000);
+
+  /* ---- login ---- */
+  const form = document.getElementById('loginForm');
+  const userEl = document.getElementById('username');
+  const passEl = document.getElementById('password');
+  const errBox = document.getElementById('errorBox');
+  const submitBtn = document.getElementById('submitBtn');
+  const toggle = document.getElementById('togglePw');
+  const loginView = document.getElementById('loginView');
+  const successView = document.getElementById('successView');
+  const screenLogin = document.getElementById('screen-login');
+  const screenApp = document.getElementById('screen-app');
+
+  const VALID_USER = 'admin';
+  const VALID_PASS = 'admin123';
+
+  function showError(msg){ errBox.textContent = msg; errBox.classList.add('show'); }
+  function clearError(){ errBox.classList.remove('show'); userEl.classList.remove('bad'); passEl.classList.remove('bad'); }
+
+  toggle.addEventListener('click', function(){
+    const isPw = passEl.type === 'password';
+    passEl.type = isPw ? 'text' : 'password';
+    toggle.textContent = isPw ? 'HIDE' : 'SHOW';
+    toggle.setAttribute('aria-pressed', String(isPw));
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    clearError();
+    const u = userEl.value.trim(), p = passEl.value;
+    if(!u || !p){
+      showError('Enter both a username and password.');
+      if(!u) userEl.classList.add('bad');
+      if(!p) passEl.classList.add('bad');
+      return;
+    }
+    submitBtn.disabled = true; submitBtn.textContent = 'Checking…';
+    setTimeout(function(){
+      if(u === VALID_USER && p === VALID_PASS){
+        loginView.classList.add('hidden');
+        successView.classList.add('show');
+        setTimeout(enterApp, 700);
+      } else {
+        showError('Invalid username or password.');
+        userEl.classList.add('bad'); passEl.classList.add('bad');
+        submitBtn.disabled = false; submitBtn.textContent = 'Log in';
+      }
+    }, 500);
+  });
+
+  function enterApp(){
+    screenLogin.classList.add('hidden');
+    screenApp.classList.remove('hidden');
+    showView('dashboard');
+  }
+
+  function resetLogin(){
+    userEl.value = ''; passEl.value = '';
+    clearError();
+    successView.classList.remove('show');
+    loginView.classList.remove('hidden');
+    submitBtn.disabled = false; submitBtn.textContent = 'Log in';
+    screenApp.classList.add('hidden');
+    screenLogin.classList.remove('hidden');
+  }
+
+  /* ---- dashboard data ---- */
+  const cams = [
+    {n:'CAM 01', loc:'Main gate', on:true},
+    {n:'CAM 02', loc:'Library entrance', on:true},
+    {n:'CAM 03', loc:'Parking lot A', on:true},
+    {n:'CAM 04', loc:'Admin block', on:false},
+    {n:'CAM 05', loc:'Hostel block B', on:true},
+    {n:'CAM 06', loc:'Cafeteria', on:true},
+  ];
+  function camCard(c){
+    return '<div class="cam '+(c.on?'':'offline')+'"><div class="tag"><span class="dot"></span>'+(c.on?'LIVE':'OFFLINE')+'</div><div class="name">'+c.n+' — '+c.loc+'</div></div>';
+  }
+  document.getElementById('dashCamGrid').innerHTML = cams.slice(0,6).map(camCard).join('');
+  document.getElementById('monCamGrid').innerHTML = cams.map(camCard).join('');
+
+  const incidents = [
+    {t:'Unattended bag — Library entrance', time:'10:42', cls:'open'},
+    {t:'Motion after hours — Admin block', time:'09:15', cls:'review'},
+    {t:'Tailgating at Main gate', time:'Yesterday', cls:'closed'},
+    {t:'Camera offline — Admin block', time:'Yesterday', cls:'open'},
+  ];
+  function incRow(i){ return '<div class="row"><div class="t1">'+i.t+'</div><div class="t2">'+i.time+'</div><span class="badge '+i.cls+'">'+i.cls+'</span></div>'; }
+  document.getElementById('dashIncidents').innerHTML = incidents.slice(0,3).map(incRow).join('');
+  document.getElementById('incidentsList').innerHTML = incidents.map(incRow).join('');
+
+  const recs = [
+    {t:'Main gate — 06:00 to 18:00', s:'2.1 GB'},
+    {t:'Library entrance — 08:00 to 17:00', s:'1.4 GB'},
+    {t:'Parking lot A — 00:00 to 23:59', s:'3.8 GB'},
+  ];
+  document.getElementById('recordingsList').innerHTML = recs.map(r=>'<div class="row"><div class="t1">'+r.t+'</div><div class="t2">'+r.s+'</div></div>').join('');
+
+  document.querySelectorAll('.switch').forEach(function(sw){ sw.addEventListener('click', function(){ sw.classList.toggle('on'); }); });
+
+  /* ---- nav ---- */
+  const titles = {
+    dashboard:['Dashboard','Overview of your surveillance network'],
+    monitoring:['Live monitoring','All camera feeds across campus'],
+    incidents:['Incidents','Logged and flagged security events'],
+    recordings:['Recordings','Search and review stored footage'],
+    reports:['Reports','Summaries and exports'],
+    settings:['Settings','System and notification preferences'],
+  };
+  function showView(name){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    const btn = document.querySelector('.nav-item[data-view="'+name+'"]');
+    if(btn) btn.classList.add('active');
+    document.getElementById('pageTitle').textContent = titles[name][0];
+    document.getElementById('pageSub').textContent = titles[name][1];
+  }
+  document.querySelectorAll('.nav-item[data-view]').forEach(function(btn){
+    btn.addEventListener('click', function(){ showView(btn.getAttribute('data-view')); });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', resetLogin);
+})();
+</script>
+</body>
+</html>

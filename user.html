@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users - CCTV Security</title>
+  <style>
+    /* Google Fonts for clean typography */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: #0f1419; /* Dark background */
+      color: #d1d5db;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ================= SIDEBAR ================= */
+    .sidebar {
+      width: 260px;
+      background-color: #161b22; /* Slightly lighter dark sidebar */
+      border-right: 1px solid #2d333b;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid #2d333b;
+    }
+
+    .logo-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .logo-subtitle {
+      font-size: 0.85rem;
+      color: #8b949e;
+    }
+
+    .nav-menu {
+      list-style: none;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 6px;
+      color: #8b949e;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background-color: #21262d;
+      color: #e6edf3;
+    }
+
+    /* Active State matching the image */
+    .nav-item.active {
+      background-color: #2d4a22; /* Dark green background */
+      color: #ffffff;
+    }
+
+    /* Sidebar Footer (User Profile) */
+    .sidebar-footer {
+      padding: 24px;
+      border-top: 1px solid #2d333b;
+      background-color: #161b22;
+    }
+
+    .user-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .user-role {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-bottom: 16px;
+    }
+
+    .logout-btn {
+      background-color: transparent;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background-color: #21262d;
+      border-color: #8b949e;
+    }
+
+    /* ================= MAIN CONTENT ================= */
+    .main-content {
+      flex-grow: 1;
+      padding: 32px 48px;
+      overflow-y: auto;
+      background-color: #0f1419;
+    }
+
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+
+    .header-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .header-subtitle {
+      font-size: 0.95rem;
+      color: #8b949e;
+    }
+
+    .timestamp {
+      font-size: 0.85rem;
+      color: #8b949e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timestamp-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #4CAF50;
+      box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
+    }
+
+    /* Content Header */
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .add-user-btn {
+      background-color: #5ebd5e; /* Bright green button */
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .add-user-btn:hover {
+      background-color: #4caf50;
+    }
+
+    /* Table Container */
+    .table-container {
+      background-color: #161b22;
+      border: 1px solid #2d333b;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background-color: #1c2128;
+      color: #8b949e;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: none;
+      padding: 16px 24px;
+      border-bottom: 1px solid #2d333b;
+    }
+
+    td {
+      padding: 16px 24px;
+      border-bottom: 1px solid #2d333b;
+      font-size: 0.9rem;
+      color: #c9d1d9;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: #1c2128;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #4CAF50;
+      border: 1px solid #2d4a22;
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    /* Action Buttons */
+    .actions-cell {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end; /* Align right for cleaner look */
+    }
+
+    .btn-action {
+      background-color: transparent;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background-color: #21262d;
+      border-color: #8b949e;
+    }
+
+    .btn-delete {
+      color: #f85149;
+      border-color: #f85149;
+    }
+
+    .btn-delete:hover {
+      background-color: rgba(248, 81, 73, 0.1);
+      border-color: #ff7b72;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1419; 
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363d; 
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #8b949e; 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-title">CCTV Security</div>
+      <div class="logo-subtitle">Zetech University</div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item">Dashboard</li>
+      <li class="nav-item">Live monitoring</li>
+      <li class="nav-item">Incidents</li>
+      <li class="nav-item">Recordings</li>
+      <li class="nav-item">Cameras & zones</li>
+      <!-- Users is active -->
+      <li class="nav-item active">Users</li>
+      <li class="nav-item">Activity log</li>
+      <li class="nav-item">Settings</li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="user-name">System Administrator</div>
+      <div class="user-role">Administrator</div>
+      <button class="logout-btn">Log out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="top-header">
+      <div>
+        <h1 class="header-title">Users</h1>
+        <p class="header-subtitle">Manage who can sign in</p>
+      </div>
+      <div class="timestamp">
+        <span class="timestamp-dot"></span>
+        <span id="clock">19/10/2026 10:38:31</span>
+      </div>
+    </div>
+
+    <div class="content-header">
+      <div class="section-title">Accounts</div>
+      <button class="add-user-btn">Add user</button>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 1 -->
+          <tr>
+            <td>System Administrator</td>
+            <td>admin</td>
+            <td>Administrator</td>
+            <td><span class="status-badge">Active</span></td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn-action">Reset password</button>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 2 -->
+          <tr>
+            <td>Security Personnel</td>
+            <td>security</td>
+            <td>Security personnel</td>
+            <td><span class="status-badge">Active</span></td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn-action">Reset password</button>
+                <button class="btn-action">Disable</button>
+                <button class="btn-action btn-delete">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script>
+    // Clock functionality matching the format in the image (DD/MM/YYYY HH:MM:SS)
+    function updateClock() {
+      const now = new Date();
+      
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      document.getElementById('clock').textContent = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
+
+    // Initialize and update every second
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
